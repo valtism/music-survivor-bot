@@ -2,7 +2,7 @@
   "name": "music-survivor-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "google-forms.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,6 +18,7 @@
   "homepage": "https://github.com/valtism/music-survivor-bot#readme",
   "dependencies": {
     "dotenv": "^6.1.0",
+    "googleapis": "^34.0.0",
     "snoowrap": "^1.15.2"
   }
 }
