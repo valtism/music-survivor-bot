@@ -9,7 +9,7 @@ const r = new snoowrap({
     password: process.env.REDDIT_PASS
 });
 
-r.getSubreddit("valtism").submitLink({
-    title: "First script post :)",
-    url: "https://i.imgur.com/q0cFFdv.gif"
-});
+r.getSubreddit("valtism")
+    .getHot()
+    .map(post => post.title)
+    .then(console.log);

@@ -75,24 +75,28 @@ function callAppsScript(auth) {
     },
   }, (err, res) => {
     if (err) return console.log(`The API create method returned an error: ${err}`);
-    script.projects.updateContent({
-      scriptId: res.data.scriptId,
-      auth,
-      resource: {
-        files: [{
-          name: 'hello',
-          type: 'SERVER_JS',
-          source: 'function helloWorld() {\n  console.log("Hello, world!");\n}',
-        }, {
-          name: 'appsscript',
-          type: 'JSON',
-          source: '{\"timeZone\":\"America/New_York\",\"exceptionLogging\":' +
-           '\"CLOUD\"}',
-        }],
-      },
-    }, {}, (err, res) => {
-      if (err) return console.log(`The API updateContent method returned an error: ${err}`);
-      console.log(`https://script.google.com/d/${res.data.scriptId}/edit`);
+    fs.readFile("appscript.gs", (err, appscript) => {
+      if (err) return console.log("Error reading appscritp.gs");
+      console.log(appscript.toString());
+      script.projects.updateContent({
+        scriptId: res.data.scriptId,
+        auth,
+        resource: {
+          files: [{
+            name: 'hello',
+            type: 'SERVER_JS',
+            source: appscript.toString(),
+          }, {
+            name: 'appsscript',
+            type: 'JSON',
+            source: '{\"timeZone\":\"America/New_York\",\"exceptionLogging\":' +
+             '\"CLOUD\"}',
+          }],
+        },
+      }, {}, (err, res) => {
+        if (err) return console.log(`The API updateContent method returned an error: ${err}`);
+        console.log(`https://script.google.com/d/${res.data.scriptId}/edit`);
+      });
     });
   });
 }
