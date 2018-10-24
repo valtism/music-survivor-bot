@@ -1,17 +1,31 @@
-const fs = require('fs');
-const readline = require('readline');
-const {google} = require('googleapis');
+const fs = require("fs");
+const readline = require("readline");
+const { google } = require("googleapis");
+const { promisify } = require("util");
+
+const readFileAsync = promisify(fs.readFile);
+const writeFileAsync = promisify(fs.writeFile);
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/script.projects'];
-const TOKEN_PATH = 'token.json';
+const SCOPES = ["https://www.googleapis.com/auth/script.projects"];
+const TOKEN_PATH = "token.json";
 
 // Load client secrets from a local file.
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Apps Script API.
-  authorize(JSON.parse(content), callAppsScript);
+fs.readFile("credentials.json", (err, content) => {
+    if (err) return console.log("Error loading client secret file:", err);
+    // Authorize a client with credentials, then call the Google Apps Script API.
+    authorize(JSON.parse(content), callAppsScript);
 });
+
+async function main() {
+    try {
+        var credentials = await readFileAsync("credentials.json");
+    } catch (error) {
+        console.log("Error loading client secret file:", error);
+    }
+    const auth = await authorize(credentials);
+    callAppsScript(auth);
+}
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -19,17 +33,37 @@ fs.readFile('credentials.json', (err, content) => {
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+// function authorize(credentials, callback) {
+//     const { client_secret, client_id, redirect_uris } = credentials.installed;
+//     const oAuth2Client = new google.auth.OAuth2(
+//         client_id,
+//         client_secret,
+//         redirect_uris[0]
+//     );
 
-  // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getAccessToken(oAuth2Client, callback);
+//     // Check if we have previously stored a token.
+//     fs.readFile(TOKEN_PATH, (err, token) => {
+//         if (err) return getAccessToken(oAuth2Client, callback);
+//         oAuth2Client.setCredentials(JSON.parse(token));
+//         callback(oAuth2Client);
+//     });
+// }
+
+async function authorize(credentials) {
+    const { client_secret, client_id, redirect_uris } = credentials.installed;
+    const oAuth2Client = new google.auth.OAuth2(
+        client_id,
+        client_secret,
+        redirect_uris[0]
+    );
+
+    try {
+        // Check if we have previously stored a token.
+        var token = await readFileAsync(TOKEN_PATH);
+    } catch (error) {
+        token = await getAccessToken(oAuth2Client);
+    }
     oAuth2Client.setCredentials(JSON.parse(token));
-    callback(oAuth2Client);
-  });
 }
 
 /**
@@ -38,29 +72,64 @@ function authorize(credentials, callback) {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-function getAccessToken(oAuth2Client, callback) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-  console.log('Authorize this app by visiting this url:', authUrl);
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  rl.question('Enter the code from that page here: ', (code) => {
-    rl.close();
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) return console.error('Error retrieving access token', err);
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-        if (err) console.error(err);
-        console.log('Token stored to', TOKEN_PATH);
-      });
-      callback(oAuth2Client);
+// function getAccessToken(oAuth2Client, callback) {
+//     const authUrl = oAuth2Client.generateAuthUrl({
+//         access_type: "offline",
+//         scope: SCOPES
+//     });
+//     console.log("Authorize this app by visiting this url:", authUrl);
+//     const rl = readline.createInterface({
+//         input: process.stdin,
+//         output: process.stdout
+//     });
+//     rl.question("Enter the code from that page here: ", code => {
+//         rl.close();
+//         oAuth2Client.getToken(code, (err, token) => {
+//             if (err) return console.error("Error retrieving access token", err);
+//             oAuth2Client.setCredentials(token);
+//             // Store the token to disk for later program executions
+//             fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
+//                 if (err) console.error(err);
+//                 console.log("Token stored to", TOKEN_PATH);
+//             });
+//             callback(oAuth2Client);
+//         });
+//     });
+// }
+
+async function getAccessToken(oAuth2Client) {
+    const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: SCOPES
     });
-  });
+    console.log("Authorize this app by visiting this url:", authUrl);
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    const code = await askCode(rl);
+    try {
+        const token = await oAuth2Client.getToken(code);
+        // Store the token to disk for later program executions
+        try {
+            await writeFileAsync(TOKEN_PATH, JSON.stringify(token));
+            console.log("Token stored to", TOKEN_PATH);
+        } catch (error) {
+            console.error(error);
+        }
+        return token;
+    } catch (error) {
+        return console.error("Error retrieving access token", error);
+    }
+}
+
+function askCode(rl) {
+    return new Promise(resolve =>
+        rl.question("Enter the code from that page here: ", code => {
+            rl.close();
+            resolve(code);
+        })
+    );
 }
 
 /**
@@ -68,35 +137,56 @@ function getAccessToken(oAuth2Client, callback) {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 function callAppsScript(auth) {
-  const script = google.script({version: 'v1', auth});
-  script.projects.create({
-    resource: {
-      title: 'My Script',
-    },
-  }, (err, res) => {
-    if (err) return console.log(`The API create method returned an error: ${err}`);
-    fs.readFile("appscript.gs", (err, appscript) => {
-      if (err) return console.log("Error reading appscritp.gs");
-      console.log(appscript.toString());
-      script.projects.updateContent({
-        scriptId: res.data.scriptId,
-        auth,
-        resource: {
-          files: [{
-            name: 'hello',
-            type: 'SERVER_JS',
-            source: appscript.toString(),
-          }, {
-            name: 'appsscript',
-            type: 'JSON',
-            source: '{\"timeZone\":\"America/New_York\",\"exceptionLogging\":' +
-             '\"CLOUD\"}',
-          }],
+    const script = google.script({ version: "v1", auth });
+    script.projects.create(
+        {
+            resource: {
+                title: "My Script"
+            }
         },
-      }, {}, (err, res) => {
-        if (err) return console.log(`The API updateContent method returned an error: ${err}`);
-        console.log(`https://script.google.com/d/${res.data.scriptId}/edit`);
-      });
-    });
-  });
+        (err, res) => {
+            if (err)
+                return console.log(
+                    `The API create method returned an error: ${err}`
+                );
+            fs.readFile("appscript.gs", (err, appscript) => {
+                if (err) return console.log("Error reading appscritp.gs");
+                console.log(appscript.toString());
+                script.projects.updateContent(
+                    {
+                        scriptId: res.data.scriptId,
+                        auth,
+                        resource: {
+                            files: [
+                                {
+                                    name: "hello",
+                                    type: "SERVER_JS",
+                                    source: appscript.toString()
+                                },
+                                {
+                                    name: "appsscript",
+                                    type: "JSON",
+                                    source:
+                                        '{"timeZone":"America/New_York","exceptionLogging":' +
+                                        '"CLOUD"}'
+                                }
+                            ]
+                        }
+                    },
+                    {},
+                    (err, res) => {
+                        if (err)
+                            return console.log(
+                                `The API updateContent method returned an error: ${err}`
+                            );
+                        console.log(
+                            `https://script.google.com/d/${
+                                res.data.scriptId
+                            }/edit`
+                        );
+                    }
+                );
+            });
+        }
+    );
 }
