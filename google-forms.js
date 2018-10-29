@@ -7,7 +7,7 @@ const SCOPES = ['https://www.googleapis.com/auth/script.projects'];
 const TOKEN_PATH = 'token.json';
 
 // Load client secrets from a local file.
-fs.readFile('credentials.json', (err, content) => {
+fs.readFile('google-credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
   // Authorize a client with credentials, then call the Google Apps Script API.
   authorize(JSON.parse(content), callAppsScript);
@@ -75,9 +75,8 @@ function callAppsScript(auth) {
     },
   }, (err, res) => {
     if (err) return console.log(`The API create method returned an error: ${err}`);
-    fs.readFile("appscript.gs", (err, appscript) => {
-      if (err) return console.log("Error reading appscritp.gs");
-      console.log(appscript.toString());
+    fs.readFile("appscript.js", (err, appscript) => {
+      if (err) return console.log("Error reading appsscript.gs");
       script.projects.updateContent({
         scriptId: res.data.scriptId,
         auth,

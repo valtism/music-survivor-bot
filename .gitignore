@@ -1,4 +1,5 @@
 .env
 node_modules
-credentials.json
+google-credentials.json
+spotify-credentials.json
 token.json

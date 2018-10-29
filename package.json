@@ -19,6 +19,7 @@
   "dependencies": {
     "dotenv": "^6.1.0",
     "googleapis": "^34.0.0",
-    "snoowrap": "^1.15.2"
+    "snoowrap": "^1.15.2",
+    "spotify-web-api-node": "^4.0.0"
   }
 }
