@@ -1,4 +1,6 @@
 require("dotenv").config();
+const readline = require("readline");
+const prompts = require("prompts");
 
 const snoowrap = require("snoowrap");
 const r = new snoowrap({
@@ -9,10 +11,14 @@ const r = new snoowrap({
     password: process.env.REDDIT_PASS
 });
 
-// r.getSubreddit("valtism")
-//     .getHot()
-//     .map(post => post.title)
-//     .then(console.log);
+async function redditTest() {
+    try {
+        const titles = await r.getHot().map(post => post.title);
+        console.log(titles);
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 const SpotifyWebApi = require("spotify-web-api-node");
 const spotifyApi = new SpotifyWebApi({
@@ -35,6 +41,17 @@ async function setSpotifyToken() {
 
 async function runSpotify() {
     try {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        rl.question("Enter the code from that page here: ", query => {
+            spotifyApi.searchTracks(query).then(async data => {
+                const response = await prompts(data);
+                console.log(response);
+            });
+        });
+
         const elvisAlbums = await spotifyApi.getArtistAlbums(
             "43ZHCT0cAZBISjO8DG9PnE"
         );
@@ -44,4 +61,5 @@ async function runSpotify() {
     }
 }
 
+redditTest();
 setSpotifyToken().then(runSpotify);
