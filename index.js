@@ -40,26 +40,38 @@ async function setSpotifyToken() {
 }
 
 async function runSpotify() {
-    try {
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-        rl.question("Enter the code from that page here: ", query => {
-            spotifyApi.searchTracks(query).then(async data => {
-                const response = await prompts(data);
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    rl.question("Search Albums: ", query => {
+        spotifyApi.searchAlbums(query).then(async data => {
+            try {
+                const choices = data.body.albums.items.map(album => {
+                    return {
+                        title: album.artists[0].name + " - " + album.name,
+                        value: album.id
+                    };
+                });
+                let questions = {
+                    type: "select",
+                    name: "albumId",
+                    message: "Select an album",
+                    choices: choices
+                };
+                const response = await prompts(questions);
                 console.log(response);
-            });
+            } catch (error) {
+                console.error(error);
+            }
         });
+    });
 
-        const elvisAlbums = await spotifyApi.getArtistAlbums(
-            "43ZHCT0cAZBISjO8DG9PnE"
-        );
-        console.log("Artist's albums: ", elvisAlbums.body);
-    } catch (error) {
-        console.error(error);
-    }
+    // const elvisAlbums = await spotifyApi.getArtistAlbums(
+    //     "43ZHCT0cAZBISjO8DG9PnE"
+    // );
+    // console.log("Artist's albums: ", elvisAlbums.body);
 }
 
-redditTest();
+// redditTest();
 setSpotifyToken().then(runSpotify);
