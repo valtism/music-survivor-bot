@@ -39,39 +39,48 @@ async function setSpotifyToken() {
     }
 }
 
-async function runSpotify() {
+function userAlbumQuery() {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
     rl.question("Search Albums: ", query => {
-        spotifyApi.searchAlbums(query).then(async data => {
-            try {
-                const choices = data.body.albums.items.map(album => {
-                    return {
-                        title: album.artists[0].name + " - " + album.name,
-                        value: album.id
-                    };
-                });
-                let questions = {
-                    type: "select",
-                    name: "albumId",
-                    message: "Select an album",
-                    choices: choices
-                };
-                const response = await prompts(questions);
-                console.log(response);
-            } catch (error) {
-                console.error(error);
-            }
-        });
+        searchSpotify(query);
     });
+}
 
-    // const elvisAlbums = await spotifyApi.getArtistAlbums(
-    //     "43ZHCT0cAZBISjO8DG9PnE"
-    // );
-    // console.log("Artist's albums: ", elvisAlbums.body);
+async function searchSpotify(query) {
+    try {
+        const data = await spotifyApi.searchAlbums(query);
+        const response = await getUserAlbumSelection(data);
+        const albumData = await spotifyApi.getAlbum(response.albumId);
+        const artists = albumData.body.artists
+            .map(artist => artist.name)
+            .join(", ");
+        const album = albumData.name;
+        const tracks = albumData.body.tracks.items.map(track => track.name);
+        console.log(albumData);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function getUserAlbumSelection(data) {
+    const choices = data.body.albums.items.map(album => {
+        return {
+            title: album.artists[0].name + " - " + album.name,
+            value: album.id
+        };
+    });
+    let questions = {
+        type: "select",
+        name: "albumId",
+        message: "Select an album",
+        choices: choices
+    };
+    const response = await prompts(questions);
+    return response;
 }
 
 // redditTest();
-setSpotifyToken().then(runSpotify);
+setSpotifyToken().then(userAlbumQuery);
