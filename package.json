@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/valtism/music-survivor-bot#readme",
   "dependencies": {
+    "better-sqlite3": "^5.0.1",
     "dotenv": "^6.1.0",
     "googleapis": "^34.0.0",
     "prompts": "^1.1.1",

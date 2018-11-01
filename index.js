@@ -1,6 +1,7 @@
 require("dotenv").config();
 const readline = require("readline");
 const prompts = require("prompts");
+const Database = require("better-sqlite3");
 
 const snoowrap = require("snoowrap");
 const r = new snoowrap({
@@ -59,7 +60,11 @@ async function searchSpotify(query) {
             .join(", ");
         const album = albumData.name;
         const tracks = albumData.body.tracks.items.map(track => track.name);
-        console.log(albumData);
+        const albumObj = {
+            artists: artists,
+            album: album,
+            tracks: tracks
+        };
     } catch (error) {
         console.error(error);
     }
@@ -83,4 +88,8 @@ async function getUserAlbumSelection(data) {
 }
 
 // redditTest();
-setSpotifyToken().then(userAlbumQuery);
+// setSpotifyToken().then(userAlbumQuery);
+
+function initDatabase() {
+    const db = new Database("music-survivor.db");
+}
