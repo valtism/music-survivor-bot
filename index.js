@@ -46,6 +46,7 @@ function userAlbumQuery() {
         output: process.stdout
     });
     rl.question("Search Albums: ", query => {
+        rl.close();
         searchSpotify(query);
     });
 }
@@ -53,18 +54,25 @@ function userAlbumQuery() {
 async function searchSpotify(query) {
     try {
         const data = await spotifyApi.searchAlbums(query);
+        if (!data.body.albums.items.length) {
+            console.log('Search: "' + query + '" returned no results');
+            userAlbumQuery();
+        }
         const response = await getUserAlbumSelection(data);
         const albumData = await spotifyApi.getAlbum(response.albumId);
-        const artists = albumData.body.artists
-            .map(artist => artist.name)
-            .join(", ");
-        const album = albumData.name;
-        const tracks = albumData.body.tracks.items.map(track => track.name);
-        const albumObj = {
-            artists: artists,
-            album: album,
-            tracks: tracks
-        };
+
+        const db = new Database("music-survivor.db");
+        const albumInsertStatement = db.prepare(
+            "INSERT INTO Album (AlbumId, Name, Artist, Image) VALUES (@AlbumId, @Name, @Artist, @Image)"
+        );
+        albumInsertStatement.run({
+            AlbumId: albumData.body.id,
+            Name: albumData.body.name,
+            Artist: albumData.body.artists
+                .map(artist => artist.name)
+                .join(", "),
+            Image: albumData.body.images[0].url
+        });
     } catch (error) {
         console.error(error);
     }
@@ -88,7 +96,7 @@ async function getUserAlbumSelection(data) {
 }
 
 // redditTest();
-// setSpotifyToken().then(userAlbumQuery);
+setSpotifyToken().then(userAlbumQuery);
 
 function initDatabase() {
     const db = new Database("music-survivor.db");
