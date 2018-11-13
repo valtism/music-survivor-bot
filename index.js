@@ -62,10 +62,10 @@ async function searchSpotify(query) {
         const albumData = await spotifyApi.getAlbum(response.albumId);
 
         const db = new Database("music-survivor.db");
-        const albumInsertStatement = db.prepare(
+        const addAlbum = db.prepare(
             "INSERT INTO Album (AlbumId, Name, Artist, Image) VALUES (@AlbumId, @Name, @Artist, @Image)"
         );
-        albumInsertStatement.run({
+        addAlbum.run({
             AlbumId: albumData.body.id,
             Name: albumData.body.name,
             Artist: albumData.body.artists
@@ -73,6 +73,20 @@ async function searchSpotify(query) {
                 .join(", "),
             Image: albumData.body.images[0].url
         });
+
+        const addTrack = db.prepare(
+            "INSERT INTO Track (TrackId, AlbumId, Name, TrackNumber) VALUES (@TrackId, @AlbumId, @Name, @TrackNumber)"
+        );
+
+        albumData.body.tracks.items.forEach(track => {
+            addTrack.run({
+                TrackId: track.id,
+                AlbumId: albumData.body.id,
+                Name: track.name,
+                TrackNumber: track.track_number
+            })
+        });
+
     } catch (error) {
         console.error(error);
     }
