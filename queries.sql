@@ -21,7 +21,10 @@ FROM sqlite_master
 WHERE type='table'
 
 SELECT *
-from Album
+FROM Album
+
+SELECT *
+FROM Track
 
 INSERT INTO Album
     (AlbumId, Name, Artist, Image)
@@ -32,7 +35,7 @@ VALUES
 SELECT Track.Name, Album.Name
 FROM Track join Album using(AlbumId)
 
-Insert into Track
+INSERT INTO Track
     (TrackId, AlbumId, Name, TrackNumber)
-Values
+VALUES
     ('15Id9JrqabsdHFirsadasdrLp', '2062YmB5HeofjMCiPMLv', "testerrr", 1)
