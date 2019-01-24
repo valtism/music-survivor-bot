@@ -1,24 +1,14 @@
-function createForm() {
-    var form = FormApp.create("Clipping. - CLPPNG");
+function createForm(data) {
+    var form = FormApp.create(data.Artist + " - " + data.Album);
     var item = form.addMultipleChoiceItem();
     item.setTitle("Vote a song out");
     item.setRequired(true);
-    item.setChoices([
-        item.createChoice("Intro"),
-        item.createChoice("Body & Blood"),
-        item.createChoice("Work Work"),
-        item.createChoice("Summertime"),
-        item.createChoice("Taking Off"),
-        item.createChoice("Tonight"),
-        item.createChoice("Dream"),
-        item.createChoice("Get Up"),
-        item.createChoice("Or Die"),
-        item.createChoice("Inside Out"),
-        item.createChoice("Story 2"),
-        item.createChoice("Dominoes"),
-        item.createChoice("Ends"),
-        item.createChoice("Williams Mix")
-    ]);
+    var choices = [];
+    data.Songs.forEach(function(song) {
+        choices.push(item.createChoice(song));
+    });
+    item.setChoices(choices);
+
     Logger.log("Published URL: " + form.getPublishedUrl());
     Logger.log("Editor URL: " + form.getEditUrl());
     Logger.log("ID: " + form.getId());
