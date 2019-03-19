@@ -58,7 +58,7 @@ async function searchSpotify(query) {
             console.log('Search: "' + query + '" returned no results');
             userAlbumQuery();
         }
-        const response = await getUserAlbumSelection(data);
+        const response = await getUserAlbumSelection(data.body.albums);
         const albumData = await spotifyApi.getAlbum(response.albumId);
 
         const db = new Database("music-survivor.db");
@@ -92,8 +92,8 @@ async function searchSpotify(query) {
     }
 }
 
-async function getUserAlbumSelection(data) {
-    const choices = data.body.albums.items.map(album => {
+async function getUserAlbumSelection(albums) {
+    const choices = albums.items.map(album => {
         return {
             title: album.artists[0].name + " - " + album.name,
             value: album.id
